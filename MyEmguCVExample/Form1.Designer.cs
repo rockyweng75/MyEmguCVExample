@@ -45,6 +45,8 @@
             this.label2 = new System.Windows.Forms.Label();
             this.imageBox4 = new Emgu.CV.UI.ImageBox();
             this.imageBox2 = new Emgu.CV.UI.ImageBox();
+            this.textBox2 = new System.Windows.Forms.TextBox();
+            this.label3 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.imageBox1)).BeginInit();
             this.panel1.SuspendLayout();
@@ -107,7 +109,6 @@
             this.imageBox1.Size = new System.Drawing.Size(300, 300);
             this.imageBox1.TabIndex = 2;
             this.imageBox1.TabStop = false;
-            this.imageBox1.Click += new System.EventHandler(this.imageBox1_Click);
             // 
             // label1
             // 
@@ -143,7 +144,7 @@
             this.button6.Name = "button6";
             this.button6.Size = new System.Drawing.Size(94, 29);
             this.button6.TabIndex = 8;
-            this.button6.Text = "載入";
+            this.button6.Text = "載入資料庫";
             this.button6.UseVisualStyleBackColor = true;
             this.button6.Click += new System.EventHandler(this.button6_Click);
             // 
@@ -158,6 +159,7 @@
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(945, 368);
             this.panel1.TabIndex = 9;
+
             // 
             // imageBox3
             // 
@@ -194,11 +196,29 @@
             this.imageBox2.TabIndex = 3;
             this.imageBox2.TabStop = false;
             // 
+            // textBox2
+            // 
+            this.textBox2.Location = new System.Drawing.Point(963, 13);
+            this.textBox2.Name = "textBox2";
+            this.textBox2.Size = new System.Drawing.Size(148, 27);
+            this.textBox2.TabIndex = 10;
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(896, 17);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(51, 19);
+            this.label3.TabIndex = 11;
+            this.label3.Text = "照片編號";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 19F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1373, 601);
+            this.Controls.Add(this.label3);
+            this.Controls.Add(this.textBox2);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.button6);
             this.Controls.Add(this.button5);
@@ -241,5 +261,7 @@
         private Emgu.CV.UI.ImageBox imageBox4;
         private Emgu.CV.UI.ImageBox imageBox2;
         private Emgu.CV.UI.ImageBox imageBox3;
+        private TextBox textBox2;
+        private Label label3;
     }
 }

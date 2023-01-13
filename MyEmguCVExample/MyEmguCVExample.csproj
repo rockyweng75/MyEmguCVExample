@@ -17,6 +17,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\FaceDetectionLibrary\FaceDetectionLibrary.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="Data\1.bmp">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

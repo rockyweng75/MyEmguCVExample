@@ -6,6 +6,7 @@ using System;
 using System.Windows.Forms;
 using Emgu.CV.Face;
 using Emgu.CV.CvEnum;
+using FaceDetectionLibrary;
 
 namespace MyEmguCVExample
 {
@@ -18,22 +19,24 @@ namespace MyEmguCVExample
         string sourcePath = "faces.dat";
         string imagesFolder = "./Data";
 
+        FaceDetectionService faceDetectionService;
         // https://thispersondoesnotexist.com/
 
-        public Form1()
+        public Form1(FaceDetectionService faceDetectionService)
         {
             InitializeComponent();
 
+            this.faceDetectionService = faceDetectionService;
 
             if (!File.Exists(sourcePath))
             {
                 File.Create(sourcePath);
             }
-            else 
-            {
-                //File.Delete(sourcePath);
-                //File.Create(sourcePath);
+
+            if (!faceDetectionService.IsWorking){
+                faceDetectionService.Read(sourcePath);
             }
+          
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -96,88 +99,7 @@ namespace MyEmguCVExample
             pictureBox1.Image = null;
         }
 
-        /// <summary>
-        /// 透過OpenCV進行人臉是否存在的辨識
-        /// </summary>
-        /// <param name="objMat"></param>
-        /// <param name="index"></param>
-        /// <returns></returns>
-        private List<Rectangle> CaptureFace(UMat umat)
-        {
-            List<Rectangle> faces = new List<Rectangle>();
 
-            using (CascadeClassifier faceDetector = new CascadeClassifier("./haarcascade_frontalface_default.xml"))
-            {
-
-                using (UMat ugray = new UMat())
-                {
-
-                    CvInvoke.CvtColor(umat, ugray, Emgu.CV.CvEnum.ColorConversion.Bgr2Gray);
-
-                    //imageBox1.Image = ugray;
-
-                    //normalizes brightness and increases contrast of the image
-                    CvInvoke.EqualizeHist(ugray, ugray);
-
-                    //Detect the faces  from the gray scale image and store the locations as rectangle                   
-                    Rectangle[] facesDetected = faceDetector.DetectMultiScale(
-                       ugray, 1.1, 10, new Size(20, 20));
-
-                    faces.AddRange(facesDetected);
-                }
-            }
-            return faces;
-        }
-
-
-        private void PrintFace(UMat umat, List<Rectangle> faces)
-        {
-            // 在影像上進行框線的繪圖
-            for (int f = 0; f < faces.Count; f++)
-                CvInvoke.Rectangle(umat, faces[f], new Bgr(Color.Red).MCvScalar, 2);
-
-            imageBox1.Image = umat;
-        }
-
-        private (double, int, bool) FaceRecognizer(List<Rectangle> faces) 
-        {
-
-            FileStream fileStream = new FileStream(sourcePath, FileMode.Open, FileAccess.Read);
-
-            //偵測是否為人臉
-            if (faces.Count > 0) 
-            {
-                using (var faceRecognizer = new EigenFaceRecognizer(0, double.PositiveInfinity))
-                {
-                    faceRecognizer.Read(sourcePath);
-
-                    foreach (var item in faces)
-                    {
-                        //影格圖片灰階化 並設定大小100
-                        var ToGrayFace = image
-                            .Convert<Gray, Byte>()
-                            .GetSubRect(item)
-                            .Resize(100, 100, Inter.Cubic);
-
-                        if (fileStream.Length != 0)
-                        {
-                            //重新宣告
-                            var predictResult = faceRecognizer.Predict(ToGrayFace);
-
-                            //當有一筆資料吻合 其他則不再辨識
-                            if (predictResult.Distance <= faceBase)
-                            {
-                                faceRecognizer.Dispose();
-                                faceRecognizer = null;
-                                return (predictResult.Distance, predictResult.Label, true);
-                            }
-                        }
-                    }
-                }
-            }
-            return (0, 0, false);
-
-        }
 
         /// <summary>
         /// 單次訓練
@@ -191,7 +113,6 @@ namespace MyEmguCVExample
 
             //取得路徑下所有照片
             int PictureCount = 0;
-            //faceRecognizer = new EigenFaceRecognizer(80, double.PositiveInfinity);
 
             using (var faceRecognizer = new EigenFaceRecognizer(0, double.PositiveInfinity))
             {
@@ -211,37 +132,50 @@ namespace MyEmguCVExample
 
         private void button3_Click(object sender, EventArgs e)
         {
-
             var umat = image.ToUMat();
-            var faces = CaptureFace(umat);
-
-            PrintFace(umat, faces);
-            //var result = FaceRecognizer(faces);
-            //label1.Text = $"比對結果 => 分數:{result.Item1}, 來源編號：{result.Item2}, 結果：{result.Item3}";
-
+            var faces = faceDetectionService.CaptureFace(umat);
+            faceDetectionService.PrintFaces(umat, faces);
         }
 
         private void button4_Click(object sender, EventArgs e)
         {
-            FaceTraining();
-            label1.Text = $"學習完成";
+            var _label = textBox2.Text;
+            if (string.IsNullOrEmpty(_label))
+            {
+                textBox2.Text = "請輸入照片編號(數字)";
+            }
+            else if (int.TryParse(_label,  out var label)) 
+            {
+                faceDetectionService.Train(image, label);
+                label1.Text = $"學習完成";
+            }
+            else
+            {
+                textBox2.Text = "請輸入照片編號(數字)";
+            }
         }
 
         private void button5_Click(object sender, EventArgs e)
         {
             var umat = image.ToUMat();
-            var faces = CaptureFace(umat);
-            var result = FaceRecognizer(faces);
-            label1.Text = $"比對結果 => 分數:{result.Item1}, 來源編號：{result.Item2}, 結果：{result.Item3}";
-
+            var faces = faceDetectionService.CatchGrayFace(umat);
+            var result = faceDetectionService.FaceRecognizer(faces);
+            if (result.Item3)
+            {
+                label1.Text = $"比對結果 => 分數:{result.Item1}, 來源編號：{result.Item2}, 結果：{(result.Item1 <= faceBase ? "通過" : "不通過")}";
+            }
+            else 
+            {
+                label1.Text = "無法辨識";
+            }
             umat.Dispose();
-
         }
 
         private void button6_Click(object sender, EventArgs e)
         {
+
             label1.Text = "";
-            List <Mat> trainingImages = new List<Mat>();
+            List<Image<Bgr, byte>> trainingImages = new List<Image<Bgr, byte>>();
             List<int> labels = new List<int>();
             List<ImageBox> imageBoxes = new List<ImageBox>() { null, imageBox1, imageBox2, imageBox3};
             for (var i = 1; i <= 3; i++) 
@@ -249,55 +183,23 @@ namespace MyEmguCVExample
                 var _image = new Image<Bgr, byte>($"{imagesFolder}/{i}.bmp")
                     .Resize(300, 300, Inter.Cubic);
 
-                var faces = CaptureFace(_image.ToUMat());
-
-                foreach (var item in faces) 
-                {
-                    var ToGrayFace = _image
-                       .Convert<Gray, Byte>()
-                       .GetSubRect(item)
-                       .Resize(100, 100, Inter.Cubic);
-
-                    trainingImages.Add(ToGrayFace.Mat);
-                    imageBoxes[i].Image = ToGrayFace;
-                }
-
+                trainingImages.Add(_image);
+                imageBoxes[i].Image = _image;
                 labels.Add(i);
             }
-            //MCvTermCriteria termCrit = new MCvTermCriteria(16, 0.001);
 
-            using (EigenFaceRecognizer recognizer = new EigenFaceRecognizer(80, double.PositiveInfinity))
-            {
-                recognizer.Train(trainingImages.ToArray(), labels.ToArray());
-                recognizer.Write(sourcePath);
+            faceDetectionService.BatchTrain(trainingImages.ToArray(), labels.ToArray());
+            faceDetectionService.Write(sourcePath);
 
-            }
+            var testImage = new Image<Bgr, Byte>($"{imagesFolder}/2.bmp")
+                .Resize(300, 300, Inter.Cubic);
 
-            using (EigenFaceRecognizer recognizer = new EigenFaceRecognizer(80, double.PositiveInfinity)) 
-            {
-                recognizer.Read(sourcePath);
+            var faces = faceDetectionService.CatchGrayFace(testImage.ToUMat());
 
-                var testImage = new Image<Bgr, Byte>($"{imagesFolder}/2.bmp")
-                    .Resize(300, 300, Inter.Cubic);
-
-                var faces = CaptureFace(testImage.ToUMat());
-
-                foreach (var item in faces)
-                {
-                    var ToGrayFace = testImage
-                      .Convert<Gray, Byte>()
-                      .GetSubRect(item)
-                      .Resize(100, 100, Inter.Cubic);
-
-                    EigenFaceRecognizer.PredictionResult result = recognizer.Predict(ToGrayFace);
-                    label1.Text = $"分數:{result.Distance}";
-                }
-            }
-        }
-
-        private void imageBox1_Click(object sender, EventArgs e)
-        {
+            var result = faceDetectionService.FaceRecognizer(faces);
+            label1.Text = $"載入成功，測試分數:{result.Item1}";
 
         }
+
     }
 }
